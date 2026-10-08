@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pressure Tests</title>
+    <style>
+        :root { --bg: #ffffff; --text: #111827; --pass: #047857; --fail: #b91c1c; --muted: #6b7280; }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #111827; --text: #f9fafb; --pass: #34d399; --fail: #f87171; --muted: #9ca3af; }
+        }
+        body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 16px; }
+        h1 { font-size: 18px; margin: 0 0 12px; }
+        #summary { font-weight: 700; margin-bottom: 12px; }
+        .pass { color: var(--pass); }
+        .fail { color: var(--fail); }
+        li { margin-bottom: 2px; }
+        li small { color: var(--muted); }
+        /* Kept on screen: browsers throttle requestAnimationFrame in hidden iframes. */
+        iframe { width: min(430px, 100%); height: 600px; border: 1px solid var(--muted); margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <!--
+        Tests for index.html. Open via a local server (file:// blocks iframe access):
+          python -m http.server  ->  http://localhost:8000/tests.html
+        Or headless:
+          msedge --headless=new --allow-file-access-from-files --virtual-time-budget=10000 --dump-dom file:///.../tests.html
+        The page title becomes "PASS n/n" or "FAIL x/n".
+    -->
+    <h1>Bicycle Pressure Calculator tests</h1>
+    <div id="summary">Running…</div>
+    <ul id="results"></ul>
+    <iframe id="app" src="index.html"></iframe>
+
+    <script>
+        const results = [];
+
+        function check(name, condition, detail = '') {
+            results.push({ name, ok: Boolean(condition), detail });
+            document.getElementById('summary').textContent = `Running… ${results.length} checks, last: ${name}`;
+        }
+
+        function near(name, actual, expected, tolerance) {
+            check(name, Math.abs(actual - expected) <= tolerance,
+                `got ${Number(actual).toFixed(2)}, expected ${expected} ±${tolerance}`);
+        }
+
+        function report() {
+            const failed = results.filter(r => !r.ok).length;
+            const list = document.getElementById('results');
+            results.forEach(r => {
+                const li = document.createElement('li');
+                li.className = r.ok ? 'pass' : 'fail';
+                li.textContent = (r.ok ? '✓ ' : '✗ ') + r.name + ' ';
+                if (r.detail) li.append(Object.assign(document.createElement('small'), { textContent: r.detail }));
+                list.append(li);
+            });
+            const summary = failed ? `FAIL ${failed}/${results.length}` : `PASS ${results.length}/${results.length}`;
+            document.getElementById('summary').textContent = summary;
+            document.getElementById('summary').className = failed ? 'fail' : 'pass';
+            document.title = summary;
+        }
+
+        // Neutral setup: equal temperatures, hooked rim, high-limit tire, 50/50 split,
+        // so outside pressure equals the model's average pressure.
+        function baseInput(overrides = {}) {
+            return {
+                riderWeight: 78, bikeWeight: 11, gearWeight: 0, bottleCount: 0, bottleWeight: 0,
+                outsideTemp: 20, garageTemp: 20, tireType: 'conti_gp5000str', tireWidth: 28,
+                wheel: 'dtc1800', rimWidth: 22.4, surface: 1, preference: 0, frontRatio: 0.5,
+                ...overrides
+            };
+        }
+
+        function testModel(M) {
+            // Giant hookless calculator, 78 kg rider (queried 2026-10).
+            const giant = [
+                [25, 19.4, 83], [25, 22.4, 79], [28, 19.4, 65], [28, 22.4, 61], [28, 25, 53],
+                [30, 22.4, 56], [30, 25, 50], [32, 19.4, 55], [32, 22.4, 51], [32, 25, 47]
+            ];
+            giant.forEach(([tireWidth, rimWidth, psi]) => {
+                const r = M.computePressure(baseInput({ tireWidth, rimWidth }));
+                // Giant rounds to whole PSI, so allow a little over 2.
+                near(`Giant ${tireWidth}c / ${rimWidth} mm`, r.front.outside, psi, 2.05);
+            });
+            [[60, 56], [100, 66], [110, 68]].forEach(([rider, psi]) => {
+                const r = M.computePressure(baseInput({ riderWeight: rider }));
+                near(`Giant 28c / 22.4 mm, ${rider} kg rider`, r.front.outside, psi, 1.5);
+            });
+
+            const warm = M.computePressure(baseInput({ garageTemp: 24, outsideTemp: 15 }));
+            near('Garage 24 °C -> outside 15 °C needs more pressure (absolute)',
+                warm.front.garage, (61 + 14.7) * (297.15 / 288.15) - 14.7, 0.6);
+            near('Pumped garage pressure cools to the outside goal', warm.front.outside, warm.front.target, 0.01);
+
+            const zero = M.computePressure(baseInput({ garageTemp: 24, outsideTemp: 0 }));
+            check('0 °C outside is not treated as missing', zero.front.garage > warm.front.garage + 1,
+                `0 °C garage ${zero.front.garage.toFixed(1)}, 15 °C garage ${warm.front.garage.toFixed(1)}`);
+
+            const same = M.computePressure(baseInput());
+            near('Equal temperatures: garage equals outside', same.front.garage, same.front.outside, 0.01);
+
+            const split = M.computePressure(baseInput({ frontRatio: 0.47 }));
+            near('Front ratio 0.47 splits front/rear 47/53', split.front.target / (split.front.target + split.rear.target), 0.47, 0.001);
+
+            const heavy = M.computePressure(baseInput({ riderWeight: 140, wheel: 'slr0', tireType: 'cadex_race', garageTemp: 24, outsideTemp: 5 }));
+            check('Hookless caps garage pressure at 73 PSI', heavy.rear.garage <= M.HOOKLESS_MAX_PSI + 1e-9, `rear garage ${heavy.rear.garage.toFixed(1)}`);
+            check('Hookless cap is flagged', heavy.rear.hitLimit);
+            check('Safe max is min(rim, tire)', heavy.safeMax === 73);
+
+            const gravel = M.computePressure(baseInput({ tireType: 'panaracer_gravelking_slick', riderWeight: 140 }));
+            check('Tire rated max (75) caps a hooked rim', gravel.safeMax === 75 && gravel.rear.garage <= 75);
+
+            const light = M.computePressure(baseInput({ riderWeight: 40, tireWidth: 32, rimWidth: 30, surface: 4, preference: -1 }));
+            check('Pressure never drops below 30 PSI', light.front.outside >= M.MIN_PRESSURE_PSI);
+
+            check('Unknown tire is reported', M.computePressure(baseInput({ tireType: 'nope' })).tireMaxKnown === false);
+        }
+
+        // The app batches recalculation into requestAnimationFrame, which headless
+        // browsers may never fire for an iframe; run the pending update directly.
+        const settle = win => win.runPressureCalculation();
+
+        function testUi(win) {
+            const doc = win.document;
+            const $ = id => doc.getElementById(id);
+            const num = id => parseFloat($(id).textContent);
+            const setValue = (id, value, event = 'input') => {
+                $(id).value = value;
+                $(id).dispatchEvent(new win.Event(event));
+                settle(win);
+            };
+
+            settle(win);
+            check('Default garage front 59.4 PSI', num('inflationFrontPSI') === 59.4, $('inflationFrontPSI').textContent);
+            check('Default garage rear 67.0 PSI', num('inflationRearPSI') === 67.0, $('inflationRearPSI').textContent);
+            check('Default outside 57.2 / 64.5 PSI', num('frontPSI') === 57.2 && num('rearPSI') === 64.5);
+            check('Default total load 88.3 kg', $('totalWeight').textContent === '88.3 kg');
+            check('Chart draws two lines', doc.querySelectorAll('#pressureChart polyline').length === 2);
+            const chartBox = $('pressureChart').getBoundingClientRect();
+            $('pressureChart').dispatchEvent(new win.PointerEvent('pointermove', { clientX: chartBox.right - 5, clientY: chartBox.top + 20 }));
+            check('Chart tooltip shows values at the pointer', !$('chartTooltip').hidden && $('chartTooltip').textContent.includes('40 °C'), $('chartTooltip').textContent);
+            $('pressureChart').dispatchEvent(new win.PointerEvent('pointerleave'));
+            check('Chart tooltip hides on leave', $('chartTooltip').hidden);
+
+            const widthOption = w => doc.querySelector(`#tireWidth option[value="${w}"]`);
+            check('CADEX offers 28c and 30c only',
+                !widthOption(28).disabled && !widthOption(30).disabled && widthOption(25).disabled && widthOption(32).disabled);
+            setValue('tireType', 'conti_gp5000str', 'change');
+            check('Other tires offer every width', !widthOption(25).disabled && !widthOption(32).disabled);
+            setValue('tireWidth', '32', 'change');
+            setValue('tireType', 'cadex_race', 'change');
+            check('Switching to CADEX on 32c falls back to 28c', $('tireWidth').value === '28');
+
+            setValue('ambientTemp', '0');
+            check('0 °C outside raises the garage pressure', num('inflationFrontPSI') > 59.4, $('inflationFrontPSI').textContent);
+
+            setValue('riderWeight', '500');
+            check('Out-of-range rider weight is highlighted', $('riderWeight').classList.contains('input-invalid'));
+            const clampedTotal = (150 + 7.6 + 2.6 + 0.65).toFixed(1) + ' kg';
+            check('Out-of-range rider weight is clamped to 150 kg', $('totalWeight').textContent === clampedTotal, $('totalWeight').textContent);
+
+            setValue('weightDistroProfile', 'manual', 'change');
+            setValue('customFRatio', '50');
+            check('Manual 50% ratio gives equal front/rear', $('frontPSI').textContent === $('rearPSI').textContent);
+
+            $('resetButton').click();
+            settle(win);
+            check('Reset restores rider weight and temperature', $('riderWeight').value === '77.5' && $('ambientTemp').value === '15');
+            check('Reset clears highlights', !$('riderWeight').classList.contains('input-invalid'));
+            check('Reset restores default result', num('inflationFrontPSI') === 59.4 && num('inflationRearPSI') === 67.0);
+            check('Reset hides manual ratio', $('customFRatioWrapper').style.display === 'none');
+
+            setValue('bikeSelect', 'bmc_ac01', 'change');
+            check('BMC uses hooked rim and 32c', $('rimBadge').textContent.includes('Hooked') && $('tireWidth').value === '32');
+        }
+
+        function run() {
+            try {
+                const win = document.getElementById('app').contentWindow;
+                testModel(win.PressureModel);
+                testUi(win);
+            } catch (error) {
+                check('Tests ran without errors', false, String(error));
+            }
+            report();
+        }
+
+        window.addEventListener('load', run);
+    </script>
+</body>
+</html>

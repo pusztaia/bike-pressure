@@ -36,9 +36,9 @@ This matters because the ideal gas law relates absolute pressure and absolute te
 
 | Bike | Weight | Wheelset | Rim | Tire | Size | Weight distribution |
 |---|---:|---|---|---|---:|---|
-| Giant TCR Adv 0 Di2 2025 (default) | 7.6 kg | Giant/CADEX SLR 0 | Hookless, 22.4 mm | CADEX Race GC | 28c | Road Race, 44/56 |
-| BMC Alpenchallenge 01 THREE | 9.6 kg | DT SWISS C 1800 SPLINE 23 DB | Hooked, 22 mm | Panaracer Gravelking Slick TLC | 32c | Fitness, 43/57 |
-| TCR Advanced 2022 | 8.4 kg | DT Swiss PR 1600 32 | Hooked, 18 mm | Giant Gavia Course | 28c | Road Race, 44/56 |
+| Giant TCR Adv 0 Di2 2025 (default) | 7.6 kg | Giant/CADEX SLR 0 | Hookless, 22.4 mm | CADEX Race GC | 28c | Road Race, 47/53 |
+| BMC Alpenchallenge 01 THREE | 9.6 kg | DT SWISS C 1800 SPLINE 23 DB | Hooked, 22 mm | Panaracer Gravelking Slick TLC | 32c | Fitness, 46/54 |
+| TCR Advanced 2022 | 8.4 kg | DT Swiss PR 1600 32 | Hooked, 18 mm | Giant Gavia Course | 28c | Road Race, 47/53 |
 
 ## What the Calculator Considers
 
@@ -55,6 +55,20 @@ This matters because the ideal gas law relates absolute pressure and absolute te
 - Comfort/speed preference
 - Garage temperature
 - Outside temperature
+
+## Pressure Model
+
+The base pressure is an average front/rear value calibrated against [Giant's hookless tire pressure calculator](https://www.giant-bicycles.com/global/tire-pressure) (queried October 2026). It matches Giant's results within about ±2 PSI (Giant rounds to whole PSI) for 25–32c tires on 19.4–25 mm inner rims; `tests.html` checks this.
+
+- Reference: 28c tire, 22.4 mm inner rim, ~89 kg system weight (78 kg rider) → 61 PSI
+- Weight: +0.25 PSI per kg of system weight
+- Rim width: −1.33 PSI/mm below 22.4 mm, −2.3 PSI/mm above
+- Tire width: 25c +18, 30c −5, 32c −10 PSI relative to 28c
+- Surface and ride preference adjust the average directly
+
+The average is then split by the weight distribution profile: `front = 2 × avg × ratio`, `rear = 2 × avg × (1 − ratio)`. Giant gives one value for both wheels; the profiles here put the front at roughly 85–89% of the rear.
+
+Rims narrower than 19.4 mm (e.g. the 18 mm DT Swiss PR 1600) are extrapolated beyond Giant's data.
 
 ## Safety Limits
 
@@ -82,7 +96,7 @@ The result section is intentionally simple:
 
 ## Chart
 
-The embedded Chart.js graph shows how the expected outside pressure changes across different outdoor temperatures, starting from the same garage inflation pressure.
+A small inline SVG chart (no library) shows how the expected outside pressure changes across outdoor temperatures from −10 to 40 °C, starting from the same garage inflation pressure. A dashed line marks the current outside temperature; touch or hover shows the front/rear values at that temperature.
 
 ## iPhone Optimization
 
@@ -94,40 +108,60 @@ The page is optimized for both iPhone 16 Pro Max and iPhone 13 mini:
 - Decimal inputs accept both `,` and `.` (needed for locales like Hungarian, where the iOS numeric keypad only shows a comma)
 - Larger touch targets
 - Simplified mobile pressure result layout
-- Fewer chart ticks and reduced animation on smaller iPhones
-- Chart resize after orientation changes
+- Fewer chart ticks on narrow screens
+- Chart redraws on resize and orientation changes
+- Pinch zoom stays enabled for accessibility
 
 ## Technology
 
 - HTML
 - CSS
 - JavaScript
-- Embedded Chart.js 4.4.1
+- Inline SVG chart, no third-party JavaScript
 - No build step
 - No backend
 - No installation required
 
 ## Project Structure
 
-This is a static single-file web app. There is no Python package, build pipeline, or server component.
+This is a static single-file web app. There is no Python package, build pipeline, or server component; `tests.html` is only for development.
 
 ```text
 bike-pressure/
-├── index.html  # Complete calculator app: HTML, CSS, Chart.js, and app JavaScript
+├── index.html  # Complete calculator app: HTML, CSS, and JavaScript
+├── tests.html  # Browser tests for the pressure model and the UI
 ├── README.md   # Project documentation and customization notes
 └── .git/       # Git metadata
 ```
 
-Inside `index.html`, the app is organized into four broad sections:
+Inside `index.html`, the app is organized into five broad sections:
 
 - `<head>` metadata for iOS/mobile behavior, app title, icon, and font loading.
 - Embedded CSS for the dark mobile-first interface, safe-area handling, controls, results, and chart layout.
 - HTML markup for bike, wheel, tire, rider, temperature, result, chart, and safety panels.
-- Embedded JavaScript containing Chart.js, bike/wheel/tire data, pressure calculations, UI updates, and event listeners.
+- `<script id="pressure-model">`: bike/wheel/tire data and the pure pressure calculation (`computePressure`), with no DOM access. Exposed as `window.PressureModel`.
+- The UI script: reads the form, renders results and the SVG chart, and wires up event listeners.
+
+## Tests
+
+`tests.html` loads `index.html` in an iframe and checks the pressure model against Giant's calculator values, the temperature correction, the safety limits, and the main UI flows (defaults, tire widths, validation, manual ratio, reset, chart).
+
+Browsers block iframe access on `file://`, so serve the folder locally:
+
+```sh
+python -m http.server
+# open http://localhost:8000/tests.html
+```
+
+Or run it headless (Edge or Chrome); the page title becomes `PASS n/n` or `FAIL x/n`:
+
+```sh
+msedge --headless=new --allow-file-access-from-files --virtual-time-budget=10000 --dump-dom file:///path/to/bike-pressure/tests.html
+```
 
 ## Customization
 
-Bike, wheelset, tire, and pressure-limit data can be edited directly in the JavaScript section of `index.html`.
+Bike, wheelset, tire, and pressure-limit data can be edited directly in the `<script id="pressure-model">` block of `index.html`.
 
 ### Bikes
 
@@ -163,6 +197,17 @@ const tireMaxPressure = {
 };
 ```
 
+### Tire Widths
+
+Tire models made only in certain widths are listed in `tireWidths`; the width dropdown then offers only those. Models not listed allow every width.
+
+```js
+const tireWidths = {
+  cadex_race: [28, 30],
+  cadex_classics: [28, 30]
+};
+```
+
 ## Important Note
 
 This calculator provides an estimate. It does not replace official safety instructions from tire and rim manufacturers.
@@ -180,4 +225,5 @@ Always check the official maximum pressure for both the tire and the rim. Use th
 ## Files
 
 - `index.html` - the complete calculator application.
+- `tests.html` - browser tests.
 - `README.md` - this documentation.
