@@ -21,8 +21,8 @@ This matters because the ideal gas law relates absolute pressure and absolute te
 ## How to Use
 
 1. Open `index.html` in Safari or another modern browser.
-2. Select the bike profile.
-3. Check the tire model, tire width, wheelset, rim type, and rider/gear weight.
+2. Select the bike profile. This fills in the bike weight, wheelset, inner rim width, tire, tire width, and weight distribution.
+3. Check the tire model and tire width. Only the widths the selected tire is made in can be chosen.
 4. Enter:
    - **Rider (kg)**, **Gear (kg)**: rider and gear weight.
    - **Bottles (count)** and **kg / bottle**: number of water bottles carried and the weight of each (default 0.65 kg per bottle), added to total weight.
@@ -31,6 +31,23 @@ This matters because the ideal gas law relates absolute pressure and absolute te
 5. Read the **Pressure Result** section:
    - **Pump garage**: set your pump to this pressure indoors.
    - **Outside goal**: expected/desired pressure outside.
+
+Results update automatically on every change. **Reset** restores all fields to their defaults and selects the default bike.
+
+### Input Ranges
+
+Values outside these ranges are highlighted and clamped to the nearest limit. An empty field uses the default.
+
+| Field | Default | Range |
+|---|---:|---:|
+| Bike weight (kg) | per bike | 5–15 |
+| Rider (kg) | 77.5 | 40–150 |
+| Gear (kg) | 2.6 | 0–20 |
+| Bottles (count) | 1 | 0–10 |
+| kg / bottle | 0.65 | 0–2 |
+| Rim inner width (mm) | per wheelset | 15–35 |
+| Custom front ratio (%) | 47.5 | 30–70 |
+| Outside °C, Garage °C | 15, 24 | −20–45 |
 
 ## Default Bike Profiles
 
@@ -64,11 +81,14 @@ The base pressure is an average front/rear value calibrated against [Giant's hoo
 - Weight: +0.25 PSI per kg of system weight
 - Rim width: −1.33 PSI/mm below 22.4 mm, −2.3 PSI/mm above
 - Tire width: 25c +18, 30c −5, 32c −10 PSI relative to 28c
-- Surface and ride preference adjust the average directly
+- Surface: smooth 0, mixed −2, wet −3, rough −4 PSI
+- Ride preference: comfort down to −4 PSI, speed up to +2 PSI
 
 The average is then split by the weight distribution profile: `front = 2 × avg × ratio`, `rear = 2 × avg × (1 − ratio)`. Giant gives one value for both wheels; the profiles here put the front at roughly 85–89% of the rear.
 
 Rims narrower than 19.4 mm (e.g. the 18 mm DT Swiss PR 1600) are extrapolated beyond Giant's data.
+
+The model lives in `averagePressure()` and `computePressure()` in `index.html`.
 
 ## Safety Limits
 
@@ -78,7 +98,12 @@ The calculator always applies a safety ceiling:
 safeMax = Math.min(rimLimit, tireRatedMax)
 ```
 
-For hookless wheels, the current configuration uses a 73 PSI maximum limit. For hooked rims, the rim allows higher pressure, but the tire's own rated maximum pressure still applies.
+- **Hookless rims:** 73 PSI (5 bar, ETRTO), set once as `HOOKLESS_MAX_PSI`.
+- **Hooked rims:** the wheelset's own `limit` (110 PSI in the current data), so in practice the tire's rated maximum applies.
+- **Tire maximum:** from `tireMaxPressure`; a tire missing from that table falls back to 95 PSI (`DEFAULT_TIRE_MAX_PSI`).
+- **Minimum:** no result goes below 30 PSI.
+
+If the garage pressure has to be capped, the **Outside goal** shows the pressure that is actually reachable, and the value turns orange on the affected wheel.
 
 Always obey the lower limit between the tire and rim manufacturer specifications.
 
@@ -93,6 +118,9 @@ The result section is intentionally simple:
 - PSI is shown as the primary value.
 - Bar is shown as a smaller secondary value.
 - A short temperature-correction note explains the adjustment.
+- A value that hit the safety limit is highlighted on that wheel only.
+- **Total load**: rider + bike + gear + bottles.
+- **Capacity**: the higher of the two outside pressures as a share of the safety limit.
 
 ## Chart
 
@@ -163,6 +191,8 @@ msedge --headless=new --allow-file-access-from-files --virtual-time-budget=10000
 
 Bike, wheelset, tire, and pressure-limit data can be edited directly in the `<script id="pressure-model">` block of `index.html`.
 
+The dropdowns are plain HTML, so a new bike, wheelset, or tire also needs an `<option>` with the same key in the matching `<select>` (`bikeSelect`, `wheelSelect`, `tireType`). Run `tests.html` after changing the data.
+
 ### Bikes
 
 ```js
@@ -173,7 +203,9 @@ const bikes = {
     defaultWheel: 'dtc1800',
     distroProfile: 'fitness',
     defaultTire: 'panaracer_gravelking_slick',
-    defaultTireWidth: 32
+    defaultTireWidth: 32,
+    frameSize: 'L',        // shown in the header badge
+    tireSetup: 'Tubeless'  // shown in the header badge
   }
 };
 ```
@@ -183,7 +215,20 @@ const bikes = {
 ```js
 const wheelsets = {
   'dtc1800': { type: 'hooked', limit: 110, name: 'Hooked Rim', w: 22 },
-  'slr0': { type: 'hookless', limit: 73, name: 'Hookless', w: 22.4 }
+  'slr0': { type: 'hookless', limit: HOOKLESS_MAX_PSI, name: 'Hookless', w: 22.4 }
+};
+```
+
+`w` is the inner rim width in mm, filled into the form when the wheelset is selected.
+
+### Weight Distribution
+
+The front share of front + rear pressure; `0.5` means equal. **Manual Input** in the form overrides it.
+
+```js
+const weightDistributionRatios = {
+  'road_race': 0.47,
+  'fitness': 0.46
 };
 ```
 
@@ -208,6 +253,12 @@ const tireWidths = {
 };
 ```
 
+## Known Limitations
+
+- The model is calibrated on Giant's calculator, which covers hookless road wheels only. Hooked rims use the same curve.
+- Giant also gives a hookless **minimum** pressure (50 PSI for 28c, 70 PSI for 23/25c). The calculator does not enforce it yet; it only applies the general 30 PSI floor.
+- Tire maximum pressure is stored per model, not per width.
+
 ## Important Note
 
 This calculator provides an estimate. It does not replace official safety instructions from tire and rim manufacturers.
@@ -220,10 +271,6 @@ Always check the official maximum pressure for both the tire and the rim. Use th
 - Apple Safari Web Content Guide: viewport configuration for iOS Safari.
 - OpenStax College Physics: ideal gas law and pressure-temperature relationship examples.
 - Arden tire pressure calculator explanation: gauge pressure to absolute pressure conversion using an atmospheric pressure offset.
+- [Giant tire pressure calculator](https://www.giant-bicycles.com/global/tire-pressure): calibration data for the pressure model and hookless minimum/maximum guidance.
+- [CADEX Race GC tire](https://www.cadex-cycling.com/hu/cadex-race-gc-tire): 700×28, 95 PSI / 6.6 bar maximum.
 - SRAM/Zipp tire pressure guidance: common inputs for modern bicycle tire pressure calculators, including rider/bike/gear weight, tire width, rim type, and inner rim width.
-
-## Files
-
-- `index.html` - the complete calculator application.
-- `tests.html` - browser tests.
-- `README.md` - this documentation.
