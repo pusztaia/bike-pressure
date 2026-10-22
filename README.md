@@ -157,6 +157,13 @@ This is a modular client-side web application using standard ES Modules. There i
 ```text
 bike-pressure/
 ├── index.html        # App entry point and semantic UI markup
+├── manifest.json     # PWA manifest for iOS/Android standalone installation
+├── sw.js             # Service Worker for 100% offline functionality
+├── icons/            # App icons for iOS home screen and PWA
+│   ├── apple-touch-icon.png
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   └── icon.svg
 ├── css/
 │   └── style.css     # Dark mobile-first interface, typography, and iOS safe areas
 ├── js/
@@ -168,6 +175,18 @@ bike-pressure/
 ├── package.json      # NPM scripts and project metadata
 └── README.md         # Project documentation and customization notes
 ```
+
+## iPhone App Installation (PWA)
+
+The calculator can be installed directly as a standalone iPhone app without the App Store:
+
+1. Host the project (e.g. via GitHub Pages, Vercel, Netlify, or local Wi-Fi server).
+2. Open the URL in **Safari** on your iPhone.
+3. Tap the **Share** button (the square with an arrow pointing up).
+4. Scroll down and tap **Add to Home Screen** (*Főképernyőhöz adás*).
+5. Tap **Add**.
+
+The app will appear on your home screen with its own icon, launches full screen without Safari navigation bars, and works **100% offline** (even in a garage with no mobile signal).
 
 ## Tests
 

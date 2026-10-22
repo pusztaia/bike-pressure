@@ -195,6 +195,11 @@ export function initApp() {
 
     initChart();
     updateBike();
+
+    // Register service worker for offline use
+    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
 }
 
 // Expose on window for tests / backwards compatibility

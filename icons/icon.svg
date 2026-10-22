@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="100" fill="#111827"/>
+  <!-- Outer subtle ring -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="rgba(59, 130, 246, 0.25)" stroke-width="16"/>
+  <!-- Gauge Arc (Blue) -->
+  <path d="M 120 370 A 170 170 0 1 1 392 370" fill="none" stroke="#3b82f6" stroke-width="32" stroke-linecap="round"/>
+  <!-- Optimal Pressure Arc (Green) -->
+  <path d="M 330 145 A 170 170 0 0 1 392 230" fill="none" stroke="#10b981" stroke-width="32" stroke-linecap="round"/>
+  <!-- Needle -->
+  <line x1="256" y1="256" x2="355" y2="157" stroke="#f59e0b" stroke-width="24" stroke-linecap="round"/>
+  <!-- Needle Hub -->
+  <circle cx="256" cy="256" r="32" fill="#f9fafb"/>
+  <circle cx="256" cy="256" r="14" fill="#111827"/>
+</svg>
