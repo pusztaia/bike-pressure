@@ -88,7 +88,7 @@ The average is then split by the weight distribution profile: `front = 2 × avg 
 
 Rims narrower than 19.4 mm (e.g. the 18 mm DT Swiss PR 1600) are extrapolated beyond Giant's data.
 
-The model lives in `averagePressure()` and `computePressure()` in `index.html`.
+The model lives in `averagePressure()` and `computePressure()` in [`js/model.js`](file:///c:/Users/puszt/Downloads/Python/_Sport/bike-pressure/js/model.js).
 
 ## Safety Limits
 
@@ -152,46 +152,57 @@ The page is optimized for both iPhone 16 Pro Max and iPhone 13 mini:
 
 ## Project Structure
 
-This is a static single-file web app. There is no Python package, build pipeline, or server component; `tests.html` is only for development.
+This is a modular client-side web application using standard ES Modules. There is no build pipeline or bundler required.
 
 ```text
 bike-pressure/
-├── index.html  # Complete calculator app: HTML, CSS, and JavaScript
-├── tests.html  # Browser tests for the pressure model and the UI
-├── README.md   # Project documentation and customization notes
-└── .git/       # Git metadata
+├── index.html        # App entry point and semantic UI markup
+├── css/
+│   └── style.css     # Dark mobile-first interface, typography, and iOS safe areas
+├── js/
+│   ├── model.js      # Pure pressure model data and calculation logic
+│   ├── chart.js      # Interactive SVG temperature/pressure chart
+│   └── app.js        # Form parsing, UI synchronization, and event handlers
+├── tests.js          # CLI test suite (Node test runner)
+├── tests.html        # In-browser test runner for model and UI integration
+├── package.json      # NPM scripts and project metadata
+└── README.md         # Project documentation and customization notes
 ```
-
-Inside `index.html`, the app is organized into five broad sections:
-
-- `<head>` metadata for iOS/mobile behavior, app title, icon, and font loading.
-- Embedded CSS for the dark mobile-first interface, safe-area handling, controls, results, and chart layout.
-- HTML markup for bike, wheel, tire, rider, temperature, result, chart, and safety panels.
-- `<script id="pressure-model">`: bike/wheel/tire data and the pure pressure calculation (`computePressure`), with no DOM access. Exposed as `window.PressureModel`.
-- The UI script: reads the form, renders results and the SVG chart, and wires up event listeners.
 
 ## Tests
 
-`tests.html` loads `index.html` in an iframe and checks the pressure model against Giant's calculator values, the temperature correction, the safety limits, and the main UI flows (defaults, tire widths, validation, manual ratio, reset, chart).
+### CLI Tests (Node.js)
 
-Browsers block iframe access on `file://`, so serve the folder locally:
+Run the fast zero-dependency test suite directly:
+
+```sh
+npm test
+# or
+node --test tests.js
+```
+
+### Browser Tests
+
+`tests.html` runs checks against the model calculations and verifies the main UI flows (defaults, tire widths, validation, manual ratio, reset, and SVG chart).
+
+Serve the folder locally:
 
 ```sh
 python -m http.server
 # open http://localhost:8000/tests.html
 ```
 
-Or run it headless (Edge or Chrome); the page title becomes `PASS n/n` or `FAIL x/n`:
+Or run headless in Microsoft Edge or Google Chrome:
 
 ```sh
-msedge --headless=new --allow-file-access-from-files --virtual-time-budget=10000 --dump-dom file:///path/to/bike-pressure/tests.html
+msedge --headless=new --virtual-time-budget=10000 --dump-dom http://localhost:8000/tests.html
 ```
 
 ## Customization
 
-Bike, wheelset, tire, and pressure-limit data can be edited directly in the `<script id="pressure-model">` block of `index.html`.
+Bike, wheelset, tire, and pressure-limit data can be edited in [`js/model.js`](file:///c:/Users/puszt/Downloads/Python/_Sport/bike-pressure/js/model.js).
 
-The dropdowns are plain HTML, so a new bike, wheelset, or tire also needs an `<option>` with the same key in the matching `<select>` (`bikeSelect`, `wheelSelect`, `tireType`). Run `tests.html` after changing the data.
+The dropdowns are plain HTML, so a new bike, wheelset, or tire also needs an `<option>` with the same key in the matching `<select>` (`bikeSelect`, `wheelSelect`, `tireType`) in [`index.html`](file:///c:/Users/puszt/Downloads/Python/_Sport/bike-pressure/index.html). Run `npm test` after changing the data.
 
 ### Bikes
 

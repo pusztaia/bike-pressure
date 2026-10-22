@@ -33,7 +33,9 @@
     <ul id="results"></ul>
     <iframe id="app" src="index.html"></iframe>
 
-    <script>
+    <script type="module">
+        import * as PressureModel from './js/model.js';
+
         const results = [];
 
         function check(name, condition, detail = '') {
@@ -176,10 +178,23 @@
             check('BMC uses hooked rim and 32c', $('rimBadge').textContent.includes('Hooked') && $('tireWidth').value === '32');
         }
 
-        function run() {
+        async function run() {
             try {
-                const win = document.getElementById('app').contentWindow;
-                testModel(win.PressureModel);
+                testModel(PressureModel);
+                const iframe = document.getElementById('app');
+                const win = iframe.contentWindow;
+
+                // Wait until the app module has loaded and initialized
+                let attempts = 0;
+                while (attempts < 50 && (!win || !win.runPressureCalculation)) {
+                    await new Promise(r => setTimeout(r, 50));
+                    attempts++;
+                }
+
+                if (!win || !win.runPressureCalculation) {
+                    throw new Error('Application module failed to initialize within timeout');
+                }
+
                 testUi(win);
             } catch (error) {
                 check('Tests ran without errors', false, String(error));

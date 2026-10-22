@@ -1,0 +1,15 @@
+{
+  "name": "bike-pressure",
+  "version": "1.0.0",
+  "description": "Bicycle tire pressure calculator with temperature correction",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests.js"
+  },
+  "keywords": [
+    "bicycle",
+    "tire-pressure",
+    "calculator"
+  ],
+  "license": "MIT"
+}
