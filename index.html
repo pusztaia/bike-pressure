@@ -5,7 +5,7 @@
     <!-- iOS optimization: handles notch/safe area (cover), full-screen layout.
          Pinch zoom stays enabled; 16px inputs already prevent iOS auto-zoom. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#111827">
+    <meta name="theme-color" content="#07090f">
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -27,25 +27,29 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- App UI: inputs, results, chart, and safety guidance -->
+    <a class="skip-link" href="#results">Skip to result</a>
     <div class="container">
-        <header>
+        <header class="app-header">
+            <div class="brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3v6.5M12 14.5V21M3 12h6.5M14.5 12H21"/></svg>
+                </span>
+                <span class="brand-name">Tire Pressure</span>
+            </div>
             <h1 id="bikeTitle">BMC Alpenchallenge 01 THREE</h1>
             <div class="badge-container">
-                <span id="setupBadge" class="badge active-tech"> Tubeless</span>
-                <span id="rimBadge" class="badge safe-tech"> Hooked Rim</span>
-                <span id="frameBadge" class="badge"> Size L</span>
+                <span id="setupBadge" class="badge active-tech">Tubeless</span>
+                <span id="rimBadge" class="badge safe-tech">Hooked Rim</span>
+                <span id="frameBadge" class="badge">Size L</span>
             </div>
-
         </header>
 
         <div class="main-grid">
-            <!-- LEFT PANEL: INPUTS -->
-            <div class="glass-panel">
+            <!-- INPUTS -->
+            <div class="panel inputs-panel">
                 <div class="input-group">
-                    <div class="group-title">
-                         1. Bike & Wheel
-                        <div class="help-icon">
+                    <div class="group-title"><span class="step">1</span>Bike & Wheel
+                        <div class="help-icon" tabindex="0" role="note" aria-label="Help">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -56,7 +60,7 @@
                     </div>
                     
                     <div class="input-wrapper">
-                        <label class="input-label">Select Bike</label>
+                        <label class="input-label" for="bikeSelect">Select Bike</label>
                         <select id="bikeSelect" class="select-highlight">
                             <option value="tcr2025" selected>Giant TCR Adv 0 Di2 2025 (L)</option>
                             <option value="bmc_ac01">BMC Alpenchallenge 01 THREE (L)</option>
@@ -65,12 +69,12 @@
                     </div>
                     
                     <div class="input-wrapper">
-                        <label class="input-label">Bike Weight (kg)</label>
+                        <label class="input-label" for="bikeWeight">Bike Weight (kg)</label>
                         <input type="text" id="bikeWeight" value="7.6" min="5" max="15" step="0.1" inputmode="decimal">
                     </div>
 
                     <div class="input-wrapper">
-                        <label class="input-label">Weight Distribution Profile</label>
+                        <label class="input-label" for="weightDistroProfile">Weight Distribution Profile</label>
                         <select id="weightDistroProfile">
                             <option value="road_race">Road Race (47/53)</option>
                             <option value="fitness">Fitness Bike (46/54)</option>
@@ -79,12 +83,12 @@
                     </div>
 
                     <div class="input-wrapper" id="customFRatioWrapper" style="display: none;">
-                        <label class="input-label">Custom Front Ratio (%)</label>
+                        <label class="input-label" for="customFRatio">Custom Front Ratio (%)</label>
                         <input type="text" id="customFRatio" value="47.5" min="30" max="70" step="0.1" inputmode="decimal">
                     </div>
 
                     <div class="input-wrapper">
-                        <label class="input-label">Select Wheelset</label>
+                        <label class="input-label" for="wheelSelect">Select Wheelset</label>
                         <select id="wheelSelect" class="select-highlight">
                             <option value="dtc1800" selected>DT SWISS C 1800 SPLINE 23 DB (Hooked)</option>
                             <option value="slr0">Giant/CADEX SLR 0 (Hookless)</option>
@@ -93,17 +97,14 @@
                     </div>
 
                     <div class="input-wrapper">
-                        <label class="input-label">
-                            Rim Inner Width (mm)
-                        </label>
+                        <label class="input-label" for="rimWidth">Rim Inner Width (mm)</label>
                         <input type="text" id="rimWidth" value="22.4" min="15" max="35" step="0.1" inputmode="decimal">
                     </div>
                 </div>
 
                 <div class="input-group">
-                    <div class="group-title">
-                         2. Tire Setup
-                        <div class="help-icon">
+                    <div class="group-title"><span class="step">2</span>Tire Setup
+                        <div class="help-icon" tabindex="0" role="note" aria-label="Help">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -114,7 +115,7 @@
                     </div>
 
                     <div class="input-wrapper">
-                        <label class="input-label">Tire Model</label>
+                        <label class="input-label" for="tireType">Tire Model</label>
                         <select id="tireType">
                             <optgroup label="Panaracer">
                                 <option value="panaracer_gravelking_slick" selected>Gravelking Slick TLC (32c)</option>
@@ -154,7 +155,7 @@
                     </div>
 
                     <div class="input-wrapper">
-                        <label class="input-label">Tire Width</label>
+                        <label class="input-label" for="tireWidth">Tire Width</label>
                         <select id="tireWidth">
                             <option value="25">25c (Min for Hookless)</option>
                             <option value="28">28c (Recommended)</option>
@@ -165,8 +166,8 @@
                 </div>
 
                 <div class="input-group">
-                    <div class="group-title"> 3. Conditions & Rider
-                        <div class="help-icon">
+                    <div class="group-title"><span class="step">3</span>Conditions & Rider
+                        <div class="help-icon" tabindex="0" role="note" aria-label="Help">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -176,32 +177,30 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <div class="field-row">
                         <div class="input-wrapper">
-                            <label class="input-label">Rider (kg)</label>
+                            <label class="input-label" for="riderWeight">Rider (kg)</label>
                             <input type="text" id="riderWeight" value="77.5" min="40" max="150" step="0.5" inputmode="decimal">
                         </div>
                         <div class="input-wrapper">
-                            <label class="input-label">Gear (kg)</label>
+                            <label class="input-label" for="gearWeight">Gear (kg)</label>
                             <input type="text" id="gearWeight" value="2.6" min="0" max="20" step="0.1" inputmode="decimal">
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <div class="field-row">
                         <div class="input-wrapper">
-                            <label class="input-label">Bottles (count)</label>
+                            <label class="input-label" for="bottleCount">Bottles (count)</label>
                             <input type="text" id="bottleCount" value="1" min="0" max="10" step="1" inputmode="numeric">
                         </div>
                         <div class="input-wrapper">
-                            <label class="input-label">kg / bottle</label>
+                            <label class="input-label" for="bottleWeight">kg / bottle</label>
                             <input type="text" id="bottleWeight" value="0.65" min="0" max="2" step="0.05" inputmode="decimal">
                         </div>
                     </div>
 
-                    <div class="input-wrapper" style="margin-top: 15px;">
-                        <label class="input-label">
-                            Surface Type
-                        </label>
+                    <div class="input-wrapper">
+                        <label class="input-label" for="surfaceSlider">Surface Type</label>
                         <div class="range-container">
                             <input type="range" id="surfaceSlider" min="1" max="4" step="1" value="1">
                             <div class="range-labels">
@@ -213,8 +212,8 @@
                         </div>
                     </div>
 
-                    <div class="input-wrapper" style="margin-top: 15px;">
-                        <label class="input-label">Ride Preference</label>
+                    <div class="input-wrapper">
+                        <label class="input-label" for="ridePreference">Ride Preference</label>
                         <div class="range-container">
                             <input type="range" id="ridePreference" min="-1" max="1" step="0.1" value="0">
                             <div class="range-labels">
@@ -225,34 +224,32 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <div class="field-row">
                         <div class="input-wrapper">
-                            <label class="input-label">Outside °C</label>
+                            <label class="input-label" for="ambientTemp">Outside °C</label>
                             <input type="text" id="ambientTemp" value="15" min="-20" max="45" inputmode="decimal">
                         </div>
                         <div class="input-wrapper">
-                            <label class="input-label">Garage °C</label>
+                            <label class="input-label" for="inflationTemp">Garage °C</label>
                             <input type="text" id="inflationTemp" value="24" min="-20" max="45" inputmode="decimal">
                         </div>
                     </div>
                 </div>
 
                 <div class="btn-group">
-                    <button id="resetButton" class="btn-reset">Reset</button>
+                    <button id="resetButton" class="btn-reset" type="button">Reset to defaults</button>
                 </div>
-
-
             </div>
 
-            <!-- RIGHT PANEL: RESULTS -->
-            <div class="glass-panel">
+            <!-- RESULTS -->
+            <section class="panel results-panel" id="results" aria-labelledby="resultsTitle">
                 <div class="results-header">
-                    <h2> Pressure Result</h2>
-                    <div style="font-size: 10px; color: var(--color-success)">SYSTEM ACTIVE</div>
+                    <h2 id="resultsTitle">Pressure Result</h2>
+                    <span class="live-pill"><span class="live-dot" aria-hidden="true"></span>Live</span>
                 </div>
 
                 <div class="simple-pressure-result" aria-label="Pressure result">
-                    <div class="simple-pressure-row">
+                    <div class="simple-pressure-row front">
                         <div class="wheel-chip front">Front</div>
                         <div class="pressure-pill primary">
                             <div class="pill-label">Pump garage</div>
@@ -266,7 +263,7 @@
                         </div>
                     </div>
 
-                    <div class="simple-pressure-row">
+                    <div class="simple-pressure-row rear">
                         <div class="wheel-chip rear">Rear</div>
                         <div class="pressure-pill primary">
                             <div class="pill-label">Pump garage</div>
@@ -281,22 +278,37 @@
                     </div>
                 </div>
 
-                <div class="result-caption" id="temperatureDeltaNote">Corrected using garage and outside temperatures.</div>
+                <p class="result-caption" id="temperatureDeltaNote">Corrected using garage and outside temperatures.</p>
 
-                <div class="chart-wrapper">
-                    <svg id="pressureChart" role="img" aria-label="Expected outside pressure by outside temperature"></svg>
-                    <div id="chartTooltip" class="chart-tooltip" hidden></div>
-                    <div class="chart-legend">
-                        <span class="front">Front</span>
-                        <span class="rear">Rear</span>
-                        <span class="now">Outside now</span>
+                <div class="stat-grid">
+                    <div class="stat">
+                        <div class="stat-label">Total load</div>
+                        <div class="stat-value" id="totalWeight">-- kg</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Capacity used</div>
+                        <div class="stat-value" id="utilization">--%</div>
+                        <div class="meter" aria-hidden="true"><div class="meter-fill"></div></div>
                     </div>
                 </div>
 
-                <div style="margin-top: 30px;">
-                    <div class="safety-labels" style="margin-bottom: 8px;">
+                <div class="chart-card">
+                    <div class="section-label">Outside pressure vs. temperature</div>
+                    <div class="chart-wrapper">
+                        <svg id="pressureChart" role="img" aria-label="Expected outside pressure by outside temperature"></svg>
+                        <div id="chartTooltip" class="chart-tooltip" hidden></div>
+                        <div class="chart-legend">
+                            <span class="front">Front</span>
+                            <span class="rear">Rear</span>
+                            <span class="now">Outside now</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="safety-block">
+                    <div class="safety-labels top">
                         <span id="safetyLabelName">Hookless Limit</span>
-                        <span id="safetyLabelVal" style="color: var(--color-warning)">MAX 73 PSI</span>
+                        <span id="safetyLabelVal" class="safety-val">MAX 73 PSI</span>
                     </div>
                     <div class="safety-bar">
                         <div class="sb-seg sb-low"></div>
@@ -309,36 +321,24 @@
                         <span>Danger</span>
                     </div>
                 </div>
-
-                <div class="temp-grid" style="margin-top: 25px; margin-bottom: 0;">
-                    <div class="temp-box" style="text-align: center;">
-                        <div style="font-size: 9px; color: #aaa; margin-bottom: 5px;">TOTAL LOAD</div>
-                        <div id="totalWeight" style="font-size: 16px; font-weight: 700; color: #fff;">-- kg</div>
-                    </div>
-                    <div class="temp-box" style="text-align: center;">
-                        <div style="font-size: 9px; color: #aaa; margin-bottom: 5px;">CAPACITY</div>
-                        <div id="utilization" style="font-size: 16px; font-weight: 700; color: var(--color-primary);">--%</div>
-                    </div>
-                </div>
-
-            </div>
+            </section>
         </div>
 
-        <div id="safetyBox" class="warning-box">
-            <div class="warning-header" id="warningHeader"> Safety Protocols</div>
+        <aside id="safetyBox" class="warning-box">
+            <div class="warning-header" id="warningHeader">Safety Protocols</div>
             <ul class="warning-list" id="warningList">
                 <li><strong>ETRTO:</strong> Never exceed 73 PSI (5 bar) on hookless rims.</li>
                 <li><strong>Check:</strong> Ensure your tire is "Hookless Compatible".</li>
             </ul>
-        </div>
+        </aside>
 
         <footer class="footer">
-            <div class="footer-logo"></div>
-            <div>Engineering Data - Ideal Gas Law - iPhone Optimized</div>
+            <div class="footer-logo">Engineering data</div>
+            <div>Ideal gas law &middot; temperature corrected &middot; works offline</div>
         </footer>
     </div>
 
-    <script type="module" src="js/app.js"></script>
+<script type="module" src="js/app.js"></script>
 
 </body>
 </html>

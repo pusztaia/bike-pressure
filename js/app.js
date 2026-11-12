@@ -71,8 +71,8 @@ export function updateBike() {
     if (!bikeData) return;
     document.getElementById('bikeWeight').value = bikeData.weight;
     document.getElementById('bikeTitle').textContent = bikeData.name;
-    document.getElementById('frameBadge').textContent = ' Size ' + bikeData.frameSize;
-    document.getElementById('setupBadge').textContent = ' ' + bikeData.tireSetup;
+    document.getElementById('frameBadge').textContent = 'Size ' + bikeData.frameSize;
+    document.getElementById('setupBadge').textContent = bikeData.tireSetup;
     document.getElementById('wheelSelect').value = bikeData.defaultWheel;
     document.getElementById('weightDistroProfile').value = bikeData.distroProfile;
     document.getElementById('tireType').value = bikeData.defaultTire;
@@ -107,22 +107,22 @@ export function updateWheel() {
     document.getElementById('rimWidth').value = wData.w;
 
     if (wData.type === 'hookless') {
-        badge.innerHTML = ' Hookless';
+        badge.textContent = 'Hookless';
         badge.className = 'badge danger-tech';
         document.getElementById('safetyLabelName').textContent = "Hookless Limit";
         document.getElementById('safetyLabelVal').textContent = `MAX ${wData.limit} PSI`;
-        document.getElementById('safetyLabelVal').style.color = "#ff0080";
+        document.getElementById('safetyLabelVal').style.color = "var(--danger)";
         box.className = "warning-box";
-        header.innerHTML = ' Safety Protocols (Strict)';
+        header.textContent = 'Safety Protocols (Strict)';
         list.innerHTML = `<li><strong>ETRTO:</strong> Never exceed ${wData.limit} PSI (${(wData.limit / PSI_PER_BAR).toFixed(1)} bar) on hookless rims.</li><li><strong>Check:</strong> Ensure tire is "Hookless Certified".</li>`;
     } else {
-        badge.innerHTML = ' Hooked Rim';
+        badge.textContent = 'Hooked Rim';
         badge.className = 'badge safe-tech';
         document.getElementById('safetyLabelName').textContent = "Rim Max Limit";
         document.getElementById('safetyLabelVal').textContent = "High Pressure OK";
-        document.getElementById('safetyLabelVal').style.color = "#00ff9d";
+        document.getElementById('safetyLabelVal').style.color = "var(--ok)";
         box.className = "warning-box safe-mode";
-        header.innerHTML = ' Tubeless Protocols';
+        header.textContent = 'Tubeless Protocols';
         list.innerHTML = `<li><strong>Hooked Rim:</strong> ${HOOKLESS_MAX_PSI} PSI hookless limit does NOT apply here.</li><li><strong>Tubeless:</strong> Lower pressure is still recommended.</li>`;
     }
     updateWeightDistro();
@@ -155,7 +155,14 @@ export function runPressureCalculation() {
 
     document.getElementById('temperatureDeltaNote').innerHTML = '<strong>Garage</strong>: this is what the pump should show. <strong>Outside goal</strong>: this is the expected outdoor pressure. Temperature correction: front ' + formatSigned(deltas.Front) + ' PSI, rear ' + formatSigned(deltas.Rear) + ' PSI.';
     document.getElementById('totalWeight').textContent = result.totalWeight.toFixed(1) + ' kg';
-    document.getElementById('utilization').textContent = Math.round((Math.max(result.front.outside, result.rear.outside) / result.safeMax) * 100) + '%';
+    const util = Math.round((Math.max(result.front.outside, result.rear.outside) / result.safeMax) * 100);
+    document.getElementById('utilization').textContent = util + '%';
+    const meter = document.querySelector('.meter-fill');
+    if (meter) {
+        meter.style.setProperty('--util', util);
+        meter.classList.toggle('high', util >= 85 && util < 100);
+        meter.classList.toggle('over', util >= 100);
+    }
 
     updateChart(result.front.garage, result.rear.garage, input.garageTemp, input.outsideTemp, result.safeMax);
 }
