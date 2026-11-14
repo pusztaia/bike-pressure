@@ -187,7 +187,7 @@ This is a modular client-side web application using standard ES Modules. There i
 bike-pressure/
 ├── index.html        # App entry point and semantic UI markup
 ├── manifest.json     # PWA manifest for iOS/Android standalone installation
-├── sw.js             # Service Worker for 100% offline functionality
+├── sw.js             # Service Worker: network-first, cached copy when offline
 ├── icons/            # App icons for iOS home screen and PWA
 │   ├── apple-touch-icon.png
 │   ├── icon-192.png
