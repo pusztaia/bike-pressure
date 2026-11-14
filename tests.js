@@ -84,6 +84,15 @@ test('Safety limits and clamping', () => {
     assert.equal(gravel.safeMax, 75, 'Safe max respects tire rating 75');
     assert.ok(gravel.rear.garage <= 75, 'Tire rated max caps hooked rim');
 
+    // GP5000 S TR: rated max depends on width and rim type (Continental size table).
+    const gpMax = (tireWidth, wheel) => M.computePressure(baseInput({ tireWidth, wheel })).safeMax;
+    assert.equal(gpMax(25, 'dtc1800'), 109, 'GP5000 S TR 25c hooked');
+    assert.equal(gpMax(28, 'dtc1800'), 95, 'GP5000 S TR 28c hooked');
+    assert.equal(gpMax(30, 'dtc1800'), 73, 'GP5000 S TR 30c hooked');
+    assert.equal(gpMax(28, 'slr0'), 73, 'GP5000 S TR 28c hookless');
+    assert.equal(gpMax(30, 'slr0'), 65, 'GP5000 S TR 30c hookless');
+    assert.equal(gpMax(32, 'slr0'), 65, 'GP5000 S TR 32c hookless');
+
     const light = M.computePressure(baseInput({ riderWeight: 40, tireWidth: 32, rimWidth: 30, surface: 4, preference: -1 }));
     assert.ok(light.front.outside >= M.MIN_PRESSURE_PSI, `Pressure never drops below ${M.MIN_PRESSURE_PSI} PSI`);
 

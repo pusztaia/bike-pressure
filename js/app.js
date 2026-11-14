@@ -154,6 +154,10 @@ export function runPressureCalculation() {
     });
 
     document.getElementById('temperatureDeltaNote').innerHTML = '<strong>Garage</strong>: this is what the pump should show. <strong>Outside goal</strong>: this is the expected outdoor pressure. Temperature correction: front ' + formatSigned(deltas.Front) + ' PSI, rear ' + formatSigned(deltas.Rear) + ' PSI.';
+    // Some tires are rated below the rim's hookless limit (e.g. GP5000 S TR 30c: 65 PSI).
+    if (wheelsets[input.wheel]?.type === 'hookless') {
+        document.getElementById('safetyLabelVal').textContent = `MAX ${result.safeMax} PSI`;
+    }
     document.getElementById('totalWeight').textContent = result.totalWeight.toFixed(1) + ' kg';
     const util = Math.round((Math.max(result.front.outside, result.rear.outside) / result.safeMax) * 100);
     document.getElementById('utilization').textContent = util + '%';

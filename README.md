@@ -101,6 +101,7 @@ safeMax = Math.min(rimLimit, tireRatedMax)
 - **Hookless rims:** 73 PSI (5 bar, ETRTO), set once as `HOOKLESS_MAX_PSI`.
 - **Hooked rims:** the wheelset's own `limit` (110 PSI in the current data), so in practice the tire's rated maximum applies.
 - **Tire maximum:** from `tireMaxPressure`; a tire missing from that table falls back to 95 PSI (`DEFAULT_TIRE_MAX_PSI`).
+- **Width-dependent tire maximum:** `tireMaxByWidth` overrides the flat value where the maker rates each size separately. Continental GP5000 S TR (hooked / hookless): 25c 109 / 73, 28c 95 / 73, 30c and 32c 73 / 65 PSI.
 - **Minimum:** no result goes below 30 PSI.
 
 If the garage pressure has to be capped, the **Outside goal** shows the pressure that is actually reachable, and the value turns orange on the affected wheel.

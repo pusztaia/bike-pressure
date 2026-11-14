@@ -15,6 +15,23 @@ export const tireMaxPressure = {
 
 export const DEFAULT_TIRE_MAX_PSI = 95;
 
+// Tires whose rated maximum depends on width and rim type; these override
+// tireMaxPressure. Source: continental-tires.com GP5000 S TR size table
+// (read 2026-11), hooked = TC/C, hookless = TSS/SS.
+export const tireMaxByWidth = {
+    conti_gp5000str: {
+        25: { hooked: 109, hookless: 73 },
+        28: { hooked: 95, hookless: 73 },
+        30: { hooked: 73, hookless: 65 },
+        32: { hooked: 73, hookless: 65 }
+    }
+};
+
+// Rated maximum for a tire at a given width and rim type, or undefined if unknown.
+export function tireMaxFor(tireType, tireWidth, rimType) {
+    return tireMaxByWidth[tireType]?.[tireWidth]?.[rimType] ?? tireMaxPressure[tireType];
+}
+
 export const bikes = {
     'bmc_ac01': {
         name: 'BMC Alpenchallenge 01 THREE',
@@ -116,7 +133,7 @@ export function computePressure(input) {
     const avgPSI = averagePressure({ ...input, totalWeight });
 
     const wheel = wheelsets[input.wheel];
-    const tireMax = tireMaxPressure[input.tireType] ?? DEFAULT_TIRE_MAX_PSI;
+    const tireMax = tireMaxFor(input.tireType, input.tireWidth, wheel.type) ?? DEFAULT_TIRE_MAX_PSI;
     const safeMax = Math.min(wheel.limit, tireMax);
 
     const wheelResult = share => {
@@ -140,6 +157,8 @@ export function computePressure(input) {
 const PressureModel = {
     tireWidths,
     tireMaxPressure,
+    tireMaxByWidth,
+    tireMaxFor,
     DEFAULT_TIRE_MAX_PSI,
     bikes,
     HOOKLESS_MAX_PSI,
