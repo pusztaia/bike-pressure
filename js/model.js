@@ -3,7 +3,8 @@
 // Tire models limited to specific widths; unlisted models allow every width.
 export const tireWidths = {
     cadex_race: [28, 30],
-    cadex_classics: [28, 30]
+    cadex_classics: [28, 30],
+    conti_gp5000astr: [25, 28, 32]
 };
 
 export const tireMaxPressure = {
@@ -16,13 +17,19 @@ export const tireMaxPressure = {
 export const DEFAULT_TIRE_MAX_PSI = 95;
 
 // Tires whose rated maximum depends on width and rim type; these override
-// tireMaxPressure. Source: continental-tires.com GP5000 S TR size table
+// tireMaxPressure. Source: continental-tires.com GP5000 S TR / AS TR size tables
 // (read 2026-11), hooked = TC/C, hookless = TSS/SS.
 export const tireMaxByWidth = {
     conti_gp5000str: {
         25: { hooked: 109, hookless: 73 },
         28: { hooked: 95, hookless: 73 },
         30: { hooked: 73, hookless: 65 },
+        32: { hooked: 73, hookless: 65 }
+    },
+    // AS TR is not made in 30c.
+    conti_gp5000astr: {
+        25: { hooked: 109, hookless: 73 },
+        28: { hooked: 95, hookless: 73 },
         32: { hooked: 73, hookless: 65 }
     }
 };

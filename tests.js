@@ -93,6 +93,13 @@ test('Safety limits and clamping', () => {
     assert.equal(gpMax(30, 'slr0'), 65, 'GP5000 S TR 30c hookless');
     assert.equal(gpMax(32, 'slr0'), 65, 'GP5000 S TR 32c hookless');
 
+    const asMax = (tireWidth, wheel) => M.computePressure(baseInput({ tireType: 'conti_gp5000astr', tireWidth, wheel })).safeMax;
+    assert.equal(asMax(25, 'dtc1800'), 109, 'GP5000 AS TR 25c hooked');
+    assert.equal(asMax(28, 'dtc1800'), 95, 'GP5000 AS TR 28c hooked');
+    assert.equal(asMax(32, 'dtc1800'), 73, 'GP5000 AS TR 32c hooked');
+    assert.equal(asMax(32, 'slr0'), 65, 'GP5000 AS TR 32c hookless');
+    assert.deepEqual(M.tireWidths.conti_gp5000astr, [25, 28, 32], 'GP5000 AS TR has no 30c');
+
     const light = M.computePressure(baseInput({ riderWeight: 40, tireWidth: 32, rimWidth: 30, surface: 4, preference: -1 }));
     assert.ok(light.front.outside >= M.MIN_PRESSURE_PSI, `Pressure never drops below ${M.MIN_PRESSURE_PSI} PSI`);
 

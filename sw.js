@@ -1,7 +1,7 @@
 // Service Worker for Bicycle Tire Pressure Calculator
 // Enables 100% offline functionality on mobile and desktop.
 
-const CACHE_NAME = 'bike-pressure-v4';
+const CACHE_NAME = 'bike-pressure-v5';
 
 const STATIC_ASSETS = [
     './',
