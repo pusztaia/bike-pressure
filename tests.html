@@ -31,7 +31,7 @@
     <h1>Bicycle Pressure Calculator tests</h1>
     <div id="summary">Running…</div>
     <ul id="results"></ul>
-    <iframe id="app" src="index.html"></iframe>
+    <iframe id="app" src="index.html?store=off"></iframe>
 
     <script type="module">
         import * as PressureModel from './js/model.js';
@@ -118,6 +118,17 @@
             check('Pressure never drops below 30 PSI', light.front.outside >= M.MIN_PRESSURE_PSI);
 
             check('Unknown tire is reported', M.computePressure(baseInput({ tireType: 'nope' })).tireMaxKnown === false);
+
+            // Continental rates each width and rim type separately.
+            const max = (tireType, tireWidth, wheel) => M.computePressure(baseInput({ tireType, tireWidth, wheel })).safeMax;
+            check('GP5000 S TR hooked max: 25c 109, 28c 95, 30c 73',
+                max('conti_gp5000str', 25, 'dtc1800') === 109 && max('conti_gp5000str', 28, 'dtc1800') === 95 && max('conti_gp5000str', 30, 'dtc1800') === 73);
+            check('GP5000 S TR hookless max: 28c 73, 30c 65, 32c 65',
+                max('conti_gp5000str', 28, 'slr0') === 73 && max('conti_gp5000str', 30, 'slr0') === 65 && max('conti_gp5000str', 32, 'slr0') === 65);
+            check('GP5000 AS TR max: 32c 73 hooked, 65 hookless',
+                max('conti_gp5000astr', 32, 'dtc1800') === 73 && max('conti_gp5000astr', 32, 'slr0') === 65);
+            check('Road Race profile is 48/52', M.weightDistributionRatios.road_race === 0.48);
+            check('Rough surface lowers pressure by 8 PSI', M.surfaceAdjustment(4) === -8 && M.surfaceAdjustment(1) === 0);
         }
 
         // The app batches recalculation into requestAnimationFrame, which headless
@@ -135,9 +146,9 @@
             };
 
             settle(win);
-            check('Default garage front 59.4 PSI', num('inflationFrontPSI') === 59.4, $('inflationFrontPSI').textContent);
-            check('Default garage rear 67.0 PSI', num('inflationRearPSI') === 67.0, $('inflationRearPSI').textContent);
-            check('Default outside 57.2 / 64.5 PSI', num('frontPSI') === 57.2 && num('rearPSI') === 64.5);
+            check('Default garage front 60.7 PSI', num('inflationFrontPSI') === 60.7, $('inflationFrontPSI').textContent);
+            check('Default garage rear 65.7 PSI', num('inflationRearPSI') === 65.7, $('inflationRearPSI').textContent);
+            check('Default outside 58.4 / 63.3 PSI', num('frontPSI') === 58.4 && num('rearPSI') === 63.3);
             check('Default total load 88.3 kg', $('totalWeight').textContent === '88.3 kg');
             check('Chart draws two lines', doc.querySelectorAll('#pressureChart polyline').length === 2);
             const chartBox = $('pressureChart').getBoundingClientRect();
@@ -156,7 +167,7 @@
             check('Switching to CADEX on 32c falls back to 28c', $('tireWidth').value === '28');
 
             setValue('ambientTemp', '0');
-            check('0 °C outside raises the garage pressure', num('inflationFrontPSI') > 59.4, $('inflationFrontPSI').textContent);
+            check('0 °C outside raises the garage pressure', num('inflationFrontPSI') > 60.7, $('inflationFrontPSI').textContent);
 
             setValue('riderWeight', '500');
             check('Out-of-range rider weight is highlighted', $('riderWeight').classList.contains('input-invalid'));
@@ -171,11 +182,80 @@
             settle(win);
             check('Reset restores rider weight and temperature', $('riderWeight').value === '77.5' && $('ambientTemp').value === '15');
             check('Reset clears highlights', !$('riderWeight').classList.contains('input-invalid'));
-            check('Reset restores default result', num('inflationFrontPSI') === 59.4 && num('inflationRearPSI') === 67.0);
+            check('Reset restores default result', num('inflationFrontPSI') === 60.7 && num('inflationRearPSI') === 65.7);
             check('Reset hides manual ratio', $('customFRatioWrapper').style.display === 'none');
 
             setValue('bikeSelect', 'bmc_ac01', 'change');
             check('BMC uses hooked rim and 32c', $('rimBadge').textContent.includes('Hooked') && $('tireWidth').value === '32');
+        }
+
+        const STORE_SLOT = 'bike-pressure-settings-v1:test';
+
+        // Loads the app in a throwaway iframe that saves to its own test slot.
+        async function loadApp() {
+            const frame = document.createElement('iframe');
+            frame.src = 'index.html?store=test';
+            document.body.append(frame);
+            for (let i = 0; i < 100 && !frame.contentWindow.runPressureCalculation; i++) {
+                await new Promise(r => setTimeout(r, 50));
+            }
+            return frame;
+        }
+
+        async function testSavedSettings() {
+            localStorage.removeItem(STORE_SLOT);
+            const change = (win, id, value, event) => {
+                win.document.getElementById(id).value = value;
+                win.document.getElementById(id).dispatchEvent(new win.Event(event, { bubbles: true }));
+                settle(win);
+            };
+
+            let frame = await loadApp();
+            let win = frame.contentWindow;
+            check('Nothing is saved before the first change', localStorage.getItem(STORE_SLOT) === null);
+            change(win, 'bikeSelect', 'bmc_ac01', 'change');
+            change(win, 'tireType', 'conti_gp5000astr', 'change');
+            change(win, 'tireWidth', '25', 'change');
+            change(win, 'riderWeight', '91.5', 'input');
+            change(win, 'rimWidth', '21', 'input');
+            change(win, 'surfaceSlider', '4', 'input');
+            change(win, 'weightDistroProfile', 'manual', 'change');
+            change(win, 'customFRatio', '45', 'input');
+            const expected = ['inflationFrontPSI', 'inflationRearPSI'].map(id => win.document.getElementById(id).textContent).join(' / ');
+            frame.remove();
+
+            frame = await loadApp();
+            win = frame.contentWindow;
+            settle(win);
+            const value = id => win.document.getElementById(id).value;
+            check('Saved bike, tire and width come back',
+                value('bikeSelect') === 'bmc_ac01' && value('tireType') === 'conti_gp5000astr' && value('tireWidth') === '25',
+                `${value('bikeSelect')} / ${value('tireType')} / ${value('tireWidth')}`);
+            check('Saved rider weight, rim width and surface come back',
+                value('riderWeight') === '91.5' && value('rimWidth') === '21' && value('surfaceSlider') === '4');
+            check('Saved manual ratio comes back and its field is shown',
+                value('weightDistroProfile') === 'manual' && value('customFRatio') === '45'
+                && win.document.getElementById('customFRatioWrapper').style.display === 'block');
+            const restored = ['inflationFrontPSI', 'inflationRearPSI'].map(id => win.document.getElementById(id).textContent).join(' / ');
+            check('Restored settings give the same result', restored === expected, `${restored} vs ${expected}`);
+
+            win.document.getElementById('resetButton').click();
+            check('Reset forgets the saved settings', localStorage.getItem(STORE_SLOT) === null);
+            frame.remove();
+
+            localStorage.setItem(STORE_SLOT, JSON.stringify({ bikeSelect: 'gone_bike', tireType: 'gone_tire', riderWeight: '80' }));
+            frame = await loadApp();
+            win = frame.contentWindow;
+            check('Unknown saved bike or tire keeps the default, other fields still apply',
+                win.document.getElementById('bikeSelect').value === 'tcr2025' && win.document.getElementById('tireType').value === 'cadex_race'
+                && win.document.getElementById('riderWeight').value === '80');
+            frame.remove();
+
+            localStorage.setItem(STORE_SLOT, 'not json');
+            frame = await loadApp();
+            check('Corrupt saved data is ignored', frame.contentWindow.document.getElementById('riderWeight').value === '77.5');
+            frame.remove();
+            localStorage.removeItem(STORE_SLOT);
         }
 
         async function run() {
@@ -196,6 +276,7 @@
                 }
 
                 testUi(win);
+                await testSavedSettings();
             } catch (error) {
                 check('Tests ran without errors', false, String(error));
             }

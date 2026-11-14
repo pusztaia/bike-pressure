@@ -32,7 +32,7 @@ This matters because the ideal gas law relates absolute pressure and absolute te
    - **Pump garage**: set your pump to this pressure indoors.
    - **Outside goal**: expected/desired pressure outside.
 
-Results update automatically on every change. **Reset** restores all fields to their defaults and selects the default bike.
+Results update automatically on every change. **Reset** restores all fields to their defaults and selects the default bike. Your settings are saved in the browser on every change and come back the next time you open the app, on that device only; **Reset** also forgets them.
 
 ### Input Ranges
 
@@ -231,7 +231,7 @@ node --test tests.js
 
 ### Browser Tests
 
-`tests.html` runs checks against the model calculations and verifies the main UI flows (defaults, tire widths, validation, manual ratio, reset, and SVG chart).
+`tests.html` runs checks against the model calculations and verifies the main UI flows (defaults, tire widths, validation, manual ratio, reset, saved settings, and SVG chart). It loads the app with `?store=off` (saving disabled) and `?store=test` (a separate slot), so running it never touches your own saved settings.
 
 Serve the folder locally:
 

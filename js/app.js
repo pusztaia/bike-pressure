@@ -13,6 +13,73 @@ import {
 
 import { initChart, updateChart } from './chart.js';
 
+// Settings are kept in this browser only (localStorage). `?store=off` turns
+// saving off and `?store=<name>` uses a separate slot; tests.html uses both.
+const storeParam = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('store') : null;
+const SETTINGS_ENABLED = storeParam !== 'off';
+const SETTINGS_KEY = 'bike-pressure-settings-v1' + (storeParam && SETTINGS_ENABLED ? ':' + storeParam : '');
+
+// Restored in this order: a bike sets its wheel, tire and weight defaults,
+// a wheel sets its rim width, and a tire limits the widths on offer.
+const SAVED_SELECTS = ['bikeSelect', 'wheelSelect', 'tireType', 'tireWidth', 'weightDistroProfile'];
+const SAVED_INPUTS = ['bikeWeight', 'rimWidth', 'customFRatio', 'riderWeight', 'gearWeight', 'bottleCount', 'bottleWeight', 'surfaceSlider', 'ridePreference', 'ambientTemp', 'inflationTemp'];
+
+// Storage can be unavailable (private mode, blocked site data); the app must work without it.
+export function saveSettings() {
+    if (!SETTINGS_ENABLED) return;
+    const settings = {};
+    SAVED_SELECTS.concat(SAVED_INPUTS).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) settings[id] = el.value;
+    });
+    try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch { /* not saved */ }
+}
+
+export function clearSettings() {
+    try {
+        localStorage.removeItem(SETTINGS_KEY);
+    } catch { /* nothing to clear */ }
+}
+
+function loadSettings() {
+    if (!SETTINGS_ENABLED) return null;
+    try {
+        const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+        return settings && typeof settings === 'object' ? settings : null;
+    } catch {
+        return null;
+    }
+}
+
+// Applies saved settings on top of the defaults. Returns true if any were found.
+export function restoreSettings() {
+    const settings = loadSettings();
+    if (!settings) return false;
+
+    // A saved choice that no longer exists (removed bike or tire) keeps the default.
+    const restoreSelect = id => {
+        const el = document.getElementById(id);
+        const option = Array.from(el?.options ?? []).find(o => o.value === settings[id]);
+        if (!option || option.disabled) return false;
+        el.value = settings[id];
+        return true;
+    };
+
+    if (restoreSelect('bikeSelect')) updateBike();
+    if (restoreSelect('wheelSelect')) updateWheel();
+    if (restoreSelect('tireType')) updateTireWidths();
+    restoreSelect('tireWidth');
+    restoreSelect('weightDistroProfile');
+    SAVED_INPUTS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && typeof settings[id] === 'string') el.value = settings[id];
+    });
+    updateWeightDistro();
+    return true;
+}
+
 // iOS keyboards in comma-decimal locales (e.g. Hungarian) only offer ",".
 // Accept both separators when reading decimal input fields.
 export function toFloat(value) {
@@ -185,6 +252,7 @@ export function resetForm() {
     });
     document.getElementById('bikeSelect').value = 'tcr2025';
     updateBike();
+    clearSettings();
 }
 
 export function initApp() {
@@ -212,6 +280,11 @@ export function initApp() {
 
     initChart();
     updateBike();
+    restoreSettings();
+
+    // Save after every user change; listeners above have already updated dependent fields.
+    document.addEventListener('input', saveSettings, { passive: true });
+    document.addEventListener('change', saveSettings, { passive: true });
 
     // Register service worker for offline use
     if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
@@ -226,6 +299,7 @@ if (typeof window !== 'undefined') {
     window.updateBike = updateBike;
     window.updateWheel = updateWheel;
     window.resetForm = resetForm;
+    window.restoreSettings = restoreSettings;
 }
 
 // Auto-run if loaded in document
