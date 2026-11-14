@@ -53,9 +53,9 @@ Values outside these ranges are highlighted and clamped to the nearest limit. An
 
 | Bike | Weight | Wheelset | Rim | Tire | Size | Weight distribution |
 |---|---:|---|---|---|---:|---|
-| Giant TCR Adv 0 Di2 2025 (default) | 7.6 kg | Giant/CADEX SLR 0 | Hookless, 22.4 mm | CADEX Race GC | 28c | Road Race, 47/53 |
+| Giant TCR Adv 0 Di2 2025 (default) | 7.6 kg | Giant/CADEX SLR 0 | Hookless, 22.4 mm | CADEX Race GC | 28c | Road Race, 48/52 |
 | BMC Alpenchallenge 01 THREE | 9.6 kg | DT SWISS C 1800 SPLINE 23 DB | Hooked, 22 mm | Panaracer Gravelking Slick TLC | 32c | Fitness, 46/54 |
-| TCR Advanced 2022 | 8.4 kg | DT Swiss PR 1600 32 | Hooked, 18 mm | Giant Gavia Course | 28c | Road Race, 47/53 |
+| TCR Advanced 2022 | 8.4 kg | DT Swiss PR 1600 32 | Hooked, 18 mm | Giant Gavia Course | 28c | Road Race, 48/52 |
 
 ## What the Calculator Considers
 
@@ -81,10 +81,38 @@ The base pressure is an average front/rear value calibrated against [Giant's hoo
 - Weight: +0.25 PSI per kg of system weight
 - Rim width: −1.33 PSI/mm below 22.4 mm, −2.3 PSI/mm above
 - Tire width: 25c +18, 30c −5, 32c −10 PSI relative to 28c
-- Surface: smooth 0, mixed −2, wet −3, rough −4 PSI
+- Surface: smooth 0, mixed −2, wet −3, rough −8 PSI
 - Ride preference: comfort down to −4 PSI, speed up to +2 PSI
 
-The average is then split by the weight distribution profile: `front = 2 × avg × ratio`, `rear = 2 × avg × (1 − ratio)`. Giant gives one value for both wheels; the profiles here put the front at roughly 85–89% of the rear.
+The average is then split by the weight distribution profile: `front = 2 × avg × ratio`, `rear = 2 × avg × (1 − ratio)`. Giant gives one value for both wheels; the profiles here put the front at roughly 85–92% of the rear.
+
+### Cross-check against SRAM
+
+The weight scaling was compared with [SRAM/Zipp's tire pressure guide](https://axs.sram.com/guides/tire/pressure) (queried November 2026; road, dry, 28c standard casing, 23 mm hookless rim, 11 kg bike). Both are linear in weight: Giant about 0.25 PSI/kg, SRAM about 0.32 PSI/kg. Front/rear mean, in PSI:
+
+| Rider | This model | SRAM | Difference |
+|---:|---:|---:|---:|
+| 50 kg | 52.6 | 51.4 | +1.2 |
+| 60 kg | 55.1 | 54.6 | +0.5 |
+| 78 kg | 59.6 | 60.3 | −0.7 |
+| 100 kg | 65.1 | 67.4 | −2.3 |
+| 110 kg | 67.6 | 70.6 | −3.0 |
+| 130 kg | 72.6 | 76.9 | −4.3 |
+
+The model stays calibrated to Giant; riders above about 100 kg get 2–4 PSI less than SRAM would suggest. SRAM puts the front at about 94% of the rear (48.4/51.6), a slightly smaller gap than the Road Race profile here (92%), which was moved from 47/53 to 48/52 after this comparison. `npm test` checks these points.
+
+### Cross-check against SILCA
+
+[SILCA's calculator](https://silca.cc/pages/pro-tire-pressure-calculator) (queried November 2026; high-performance tubeless casing, moderate group ride, 48/52 road split) takes system weight and *measured* tire width, and aims at the fastest pressure rather than a hookless-safe one. It runs clearly higher than Giant and SRAM. Front/rear mean, in PSI:
+
+| System weight | 30 mm measured, worn pavement |
+|---:|---:|
+| 61 kg | 66.3 |
+| 89 kg | 70.0 |
+| 111 kg | 73.0 |
+| 141 kg | 77.0 |
+
+At 89 kg: 28 mm 78.0, 30 mm 70.0, 32 mm 63.3, 34 mm 57.3; new pavement 74.0, worn 70.0, poor pavement / chipseal 64.3. For comparison this model gives 61 PSI for the same rider on a 28c tire on a 22.4 mm rim (about 30 mm measured). SILCA's weight slope (about 0.13 PSI/kg) is flatter than Giant's, its surface steps are −4 and −10 PSI, and its front is about 97% of the rear. The rough-surface step here was raised from −4 to −8 PSI after this comparison (SILCA's −10 scaled to this model's lower pressure level); nothing else is fitted to these values.
 
 Rims narrower than 19.4 mm (e.g. the 18 mm DT Swiss PR 1600) are extrapolated beyond Giant's data.
 
@@ -258,7 +286,7 @@ The front share of front + rear pressure; `0.5` means equal. **Manual Input** in
 
 ```js
 const weightDistributionRatios = {
-  'road_race': 0.47,
+  'road_race': 0.48,
   'fitness': 0.46
 };
 ```

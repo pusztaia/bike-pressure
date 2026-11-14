@@ -49,6 +49,17 @@ test('Giant rider weight scaling', () => {
     });
 });
 
+// Cross-check only: the model is calibrated to Giant, not SRAM. SRAM/Zipp guide
+// (axs.sram.com/guides/tire/pressure, queried 2026-11): road, dry, 28c standard
+// casing, 23 mm hookless rim, 11 kg bike. Values are the front/rear mean in bar.
+test('SRAM cross-check of rider weight scaling', () => {
+    const sram = [[50, 3.545], [60, 3.765], [70, 3.985], [78, 4.16], [90, 4.425], [100, 4.645], [110, 4.87], [130, 5.305]];
+    sram.forEach(([rider, bar]) => {
+        const r = M.computePressure(baseInput({ riderWeight: rider, rimWidth: 23 }));
+        assertNear(r.front.outside, bar * M.PSI_PER_BAR, rider <= 110 ? 3.5 : 4.5, `SRAM 28c / 23 mm, ${rider} kg rider`);
+    });
+});
+
 test('Temperature correction (absolute pressure ideal gas law)', () => {
     const warm = M.computePressure(baseInput({ garageTemp: 24, outsideTemp: 15 }));
     const expectedGarage = (61 + 14.7) * (297.15 / 288.15) - 14.7;
@@ -66,6 +77,9 @@ test('Weight distribution split', () => {
     const split = M.computePressure(baseInput({ frontRatio: 0.47 }));
     const totalTarget = split.front.target + split.rear.target;
     assertNear(split.front.target / totalTarget, 0.47, 0.001, 'Front ratio 0.47 splits 47/53');
+    assert.equal(M.weightDistributionRatios.road_race, 0.48, 'Road Race profile is 48/52');
+    assert.equal(M.surfaceAdjustment(1), 0, 'Smooth surface: no correction');
+    assert.equal(M.surfaceAdjustment(4), -8, 'Rough surface: -8 PSI');
 });
 
 test('Safety limits and clamping', () => {

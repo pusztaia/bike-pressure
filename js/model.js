@@ -83,7 +83,7 @@ export const wheelsets = {
 
 // Front share of front+rear pressure, so 0.5 means equal.
 export const weightDistributionRatios = {
-    'road_race': 0.47,
+    'road_race': 0.48,
     'fitness': 0.46
 };
 
@@ -101,7 +101,7 @@ export function convertGaugePressure(gaugePSI, fromCelsius, toCelsius) {
 
 // Surface slider: 1 smooth, 2 mixed, 3 wet, 4 rough.
 export function surfaceAdjustment(level) {
-    return { 1: 0, 2: -2, 3: -3, 4: -4 }[level] ?? 0;
+    return { 1: 0, 2: -2, 3: -3, 4: -8 }[level] ?? 0;
 }
 
 // Preference slider: -1 comfort ... +1 speed.
